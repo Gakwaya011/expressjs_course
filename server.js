@@ -13,6 +13,9 @@ let posts =[
     {id:2,title:'Post Two'},
     {id:3,title:'Post Three'},
 ]
+app.get('/',(req,res)=>{
+    res.send('hello world')
+})
 
 app.get('/api/posts',(req,res)=>{
     res.json(posts)
