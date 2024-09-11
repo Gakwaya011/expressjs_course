@@ -5,8 +5,12 @@ app.get('/',(req,res)=>{
     res.send('hello world')
 })
 
-const testRoute = require('./routes/usertest'); // or './routes/usertest'
+const testRoute = require('./routes/usertest');
+const userRoutes = require('./routes/usertest'); // or './routes/usertest'
+app.use(express.json());
 app.use('/', testRoute);
+app.use('/api/users', userRoutes);
+
 
 
 app.listen(port,()=>{
