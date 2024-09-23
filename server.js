@@ -1,15 +1,18 @@
 const express = require('express')
 const app = express()
-const port = 3000
+
+const port = 3000;
+const userRoutes = require('./routes/usertest');
 app.get('/',(req,res)=>{
     res.send('hello world')
 })
 
-// const testRoute = require('./routes/usertest');
-const userRoutes = require('./routes/usertest'); // or './routes/usertest'
 app.use(express.json());
+
 // app.use('/', testRoute);
-app.use('/api/users', userRoutes);
+app.use('/api', userRoutes);
+
+
 
 
 

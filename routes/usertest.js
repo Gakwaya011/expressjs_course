@@ -107,20 +107,22 @@ router.put('/update-user/:id',async(req,res)=>{
   }
 
 });
-router.put('/update-user-with-account/:id',async(req,res)=>{
-  const {id}= req.params;
-  const {name,email,username,password,country,province,accounts}=req.body;
+router.put('/update-user-with-account/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email, username, password, country, province, accounts: accountsData } = req.body;
 
-  try{
-    const user = await usertable.findByPk(id,{
-      include:[{
-        model:accounts,
-        as:'accounts'
-      }]
+  try {
+    
+    const user = await usertable.findByPk(id, {
+      include: [accounts]  
     });
-    if(!user){
-      return res.status(500).json({message:'user not found'});
+
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    
     await user.update({
       name,
       email,
@@ -129,23 +131,78 @@ router.put('/update-user-with-account/:id',async(req,res)=>{
       country,
       province
     });
-    if (accounts && accounts.length > 0){
-      for(let accountsData of accounts){
-        let account = await user.getAccounts({where:{id: accountData.id}});
 
-        if(account.length>0){
-          await account[0].update(accountData);
+    // If accounts data is provided, update or create accounts
+    if (accountsData && accountsData.length > 0) {
+      for (let accountData of accountsData) {
+        if (accountData.id) {
+          let existingAccount = await accounts.findOne({ where: { id: accountData.id, usertableId: user.id } });
 
+          if (existingAccount) {
+            
+            await existingAccount.update(accountData);
+          } else {
+            return res.status(404).json({ message: `Account with ID ${accountData.id} not found for user` });
+          }
         } else {
-          await user.createAccount(accountData);
+          // Create a new account if no `id` is provided 
+          await accounts.create({ ...accountData, usertableId: user.id });
         }
       }
     }
-    res.status(200).json({message:'user and accounts updated succesfully',user});
-  } catch (error){
-    console.error('error updating user and accounts:',error);
-    res.satus(500).json({error:'error occured while updating  user and accounts'});
+
+    res.status(200).json({ message: 'User and accounts updated successfully', user });
+  } catch (error) {
+    console.error('Error updating user and accounts:', error);
+    res.status(500).json({ error: 'Error occurred while updating user and accounts' });
   }
-})
+});
+
+
+
+
+router.get('/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  
+  try {
+      
+      const user = await usertable.findOne({
+          where: { id: userId },
+          include: [accounts] 
+      });
+
+      if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({ message: 'User found', user });
+  } catch (error) {
+      console.error('Error fetching user with accounts:', error);
+      res.status(500).json({ error: 'An error occurred while retrieving the user' });
+  }
+});
+
+router.delete('/delete_user/:id', async (req, res) => {
+  const userId = req.params.id;
+  
+
+  try {
+    
+    const user = await usertable.findByPk(userId);
+    if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      
+      await user.destroy();
+      res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'An error occurred while deleting the user' });
+  }
+});
+
+
+
  
 module.exports = router;
